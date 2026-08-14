@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ 曼城球迷专属日历</title>
+<style>
+  :root { --accent: #ffd76a; --accent-bg: rgba(255,215,106,.15); --theme-name: '争冠期 👑'; }
+  body[data-theme="top4"] { --accent: #6cb6f0; --accent-bg: rgba(74,163,240,.18); --theme-name: '争四期 🏆'; }
+  body[data-theme="relegation"] { --accent: #9aa7b5; --accent-bg: rgba(154,167,181,.15); --theme-name: '摆烂期 🪑'; }
+  body[data-theme="pre"] { --accent: #9db8cf; --accent-bg: rgba(157,184,207,.12); --theme-name: '赛季未开始 ⏳'; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #0d2f55; color: #e8f4ff; min-height: 100vh; }
+  #app { max-width: 560px; margin: 0 auto; }
+
+  header { position: relative; height: 190px; background: linear-gradient(135deg, #14507f, #0d2f55); background-size: cover; background-position: center; display: flex; align-items: flex-end; padding: 16px; border-radius: 0 0 18px 18px; box-shadow: 0 4px 20px rgba(0,0,0,.4); overflow: hidden; cursor: pointer; }
+  #headerImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; z-index: 0; border-radius: 0 0 18px 18px; }
+  header::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(6,18,35,.75) 100%); border-radius: 0 0 18px 18px; z-index: 1; }
+  .header-text { position: relative; z-index: 2; width: 100%; }
+  .header-text .month { font-size: 30px; font-weight: bold; text-shadow: 0 2px 10px rgba(0,0,0,.6); }
+  .header-text .year { font-size: 14px; color: #a8d4f0; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+  .header-text .story-hint { font-size: 11px; color: #ffd76a; opacity: .9; text-shadow: 0 1px 4px rgba(0,0,0,.7); }
+
+  .countdown { margin: 12px 14px; padding: 12px 16px; background: var(--accent-bg); border: 1px solid rgba(255,255,255,.2); border-radius: 12px; text-align: center; font-size: 14px; }
+  .countdown .big { font-size: 16px; font-weight: bold; color: var(--accent); }
+
+  .stats-panel { margin: 0 14px 12px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 14px; }
+  .stats-panel h2 { font-size: 15px; color: var(--accent); margin-bottom: 10px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; text-align: center; }
+  .stats-grid .cell { background: rgba(0,0,0,.2); border-radius: 10px; padding: 8px 2px; }
+  .stats-grid .num { display: block; font-size: 20px; font-weight: bold; }
+  .stats-grid .cell:nth-child(1) .num { color: #ffffff; }
+  .stats-grid .cell:nth-child(2) .num { color: #5ae08a; }
+  .stats-grid .cell:nth-child(3) .num { color: #f6c85f; }
+  .stats-grid .cell:nth-child(4) .num { color: #ff7a7a; }
+  .stats-grid .cell:nth-child(5) .num { color: #6cb6f0; }
+  .stats-grid .cell:nth-child(6) .num { color: #ffd76a; }
+  .stats-grid .lbl { font-size: 10px; color: #9db8cf; }
+  .predict { margin-top: 10px; padding: 8px 10px; background: rgba(0,0,0,.2); border-radius: 10px; font-size: 13px; color: #cde9ff; text-align: center; }
+  .predict .gold { color: var(--accent); font-weight: bold; }
+  .header-text .month { color: var(--accent); text-shadow: 0 2px 12px rgba(0,0,0,.8); }
+  .legend .tag-match { color: #ffd76a; } .legend .tag-big6 { color: #ff8a8a; } .legend .tag-tr { color: #7ddc8a; } .legend .tag-bd { color: #ff9ecb; } .legend .tag-watch { color: #5ae08a; }
+
+  .controls { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; gap: 8px; }
+  .controls button { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); color: #e8f4ff; border-radius: 10px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+  .controls button:active { transform: scale(.95); }
+  .controls .nav { display: flex; gap: 6px; }
+  .controls .cur { font-size: 15px; font-weight: bold; min-width: 110px; text-align: center; }
+  .controls .btn-ics { background: linear-gradient(135deg, #4aa3f0, #2d6fa8); border: none; }
+
+  .legend { padding: 2px 14px 8px; font-size: 12px; color: #9db8cf; }
+  .legend span { margin-right: 12px; }
+  .legend .big6 { color: #ff8a8a; }
+
+  .cal { margin: 0 14px; background: rgba(255,255,255,.06); border-radius: 14px; padding: 8px; border: 1px solid rgba(255,255,255,.1); }
+  .cal .weekdays, .cal .days { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal .weekdays div { text-align: center; font-size: 12px; color: #9db8cf; padding: 6px 0; }
+  .cal .days div { text-align: center; padding: 7px 2px; font-size: 13px; border-radius: 8px; position: relative; min-height: 38px; cursor: default; }
+  .cal .days div.empty { visibility: hidden; }
+  .cal .days div.today { background: rgba(74,163,240,.35); font-weight: bold; box-shadow: inset 0 0 0 1px #4aa3f0; }
+  .cal .days div.match { cursor: pointer; background: rgba(255,215,106,.15); }
+  .cal .days div.match:hover { background: rgba(255,215,106,.3); }
+  .cal .days div.match.big6 { background: rgba(255,80,80,.2); }
+  .cal .days div.watched { box-shadow: inset 0 -3px 0 #5ae08a; }
+  .cal .days div.transfer { cursor: pointer; background: rgba(120,200,120,.12); }
+  .cal .days div.bday { cursor: pointer; background: rgba(255,150,200,.12); }
+  .cal .days .dot { display: block; font-size: 9px; line-height: 1.2; }
+  .cal .days .date-num { display: block; }
+
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 99; align-items: center; justify-content: center; padding: 20px; }
+  .modal.show { display: flex; }
+  .modal-box { background: #0f2f52; border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+  .modal-box h3 { color: var(--accent); margin-bottom: 10px; font-size: 17px; }
+  .modal-box .row { margin: 8px 0; font-size: 14px; line-height: 1.7; }
+  .modal-box .close { display: block; margin-top: 14px; width: 100%; padding: 10px; border: none; border-radius: 10px; background: rgba(255,255,255,.15); color: #fff; font-size: 14px; cursor: pointer; }
+  .modal-box input { width: 100%; padding: 8px 10px; margin-top: 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.1); color: #fff; }
+  .result-btns { display: flex; gap: 8px; margin-top: 8px; }
+  .result-btns button { flex: 1; padding: 9px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .result-btns .win { background: rgba(74,163,240,.6); color: #fff; }
+  .result-btns .draw { background: rgba(255,215,106,.5); color: #333; }
+  .result-btns .loss { background: rgba(255,80,80,.55); color: #fff; }
+  .result-btns button.sel { outline: 3px solid #fff; }
+  .modal-box .save { margin-top: 8px; padding: 8px; width: 100%; border: none; border-radius: 8px; background: linear-gradient(135deg, #4aa3f0, #2d6fa8); color: #fff; cursor: pointer; }
+  .watch-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .watch-row button { flex: 1; padding: 9px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .watch-btn.on { background: #5ae08a; color: #0a2a1a; font-weight: bold; }
+  .watch-btn.off { background: rgba(255,255,255,.15); color: #fff; }
+  .stars { font-size: 22px; letter-spacing: 4px; cursor: pointer; user-select: none; }
+  .stars .star { color: #555; }
+  .stars .star.on { color: #ffd76a; }
+
+  .footer { text-align: center; padding: 20px; color: #6f9fc4; font-size: 12px; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="header" onclick="showMonthStory()">
+    <img id="headerImg" alt="曼城月历背景">
+    <div class="header-text">
+      <div class="month" id="monthTitle">8月</div>
+      <div class="year" id="yearTitle">2026 · 曼城球迷专属日历</div>
+      <div class="story-hint" id="storyHint">📖 点击查看本月名场面</div>
+    </div>
+  </header>
+
+  <div class="countdown" id="countdown">⚽ 加载中…</div>
+
+  <div class="stats-panel">
+    <h2 id="statsTitle">📊 曼城本赛季战绩统计</h2>
+    <div class="stats-grid">
+      <div class="cell"><span class="num" id="stP">0</span><span class="lbl">场次</span></div>
+      <div class="cell"><span class="num" id="stW">0</span><span class="lbl">胜</span></div>
+      <div class="cell"><span class="num" id="stD">0</span><span class="lbl">平</span></div>
+      <div class="cell"><span class="num" id="stL">0</span><span class="lbl">负</span></div>
+      <div class="cell"><span class="num" id="stGF">0</span><span class="lbl">进球</span></div>
+      <div class="cell"><span class="num" id="stPts">0</span><span class="lbl">积分</span></div>
+    </div>
+    <div class="predict" id="predictLine">⚽ 记录赛果后自动预测赛季排名（自嗨版）</div>
+  </div>
+
+  <div class="controls">
+    <div class="nav">
+      <button onclick="changeMonth(-1)">◀</button>
+      <button onclick="changeMonth(1)">▶</button>
+    </div>
+    <div class="cur" id="curLabel">2026年8月</div>
+    <button class="btn-ics" onclick="exportICS()">📅 导出赛程</button>
+  </div>
+
+  <div class="legend">
+    <span class="tag-match">⚽ 比赛日</span><span class="tag-big6">★ 焦点战</span><span class="tag-tr">🔄 转会</span><span class="tag-bd">🎂 生日</span><span class="tag-watch">👀 已打卡</span>
+  </div>
+
+  <div class="cal">
+    <div class="weekdays"><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div></div>
+    <div class="days" id="days"></div>
+  </div>
+
+  <div class="footer">
+    ⚽ 曼城球迷专属日历 v1.2 · 由鲸鱼娘制作 🐋<br>
+    赛程随官方发布持续更新 · 赛果/打卡记录保存在本机
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<script>
+/* ================= 数据区（本小姐持续更新这里） ================= */
+const BIG6 = ['曼联', '利物浦', '阿森纳', '切尔西', '热刺', '纽卡斯尔'];
+
+const MATCHES = [
+  {date:'2026-08-23', comp:'英超第1轮', opp:'伯恩茅斯', home:true, time:'21:00', note:'2026-27赛季揭幕战 🎉'},
+  // ⬇️ 完整赛程将随官方发布持续更新
+];
+
+const TRANSFERS = [
+  {date:'2025-07-01', type:'in', player:'谢尔基 (Rayan Cherki)', detail:'里昂→曼城，接过10号球衣'},
+  {date:'2025-08-31', type:'out', player:'埃德森 (Ederson)', detail:'离队'},
+  {date:'2025-06-30', type:'out', player:'德布劳内 (De Bruyne)', detail:'合同到期离队，传奇谢幕'},
+  {date:'2026-07-01', type:'in', player:'安德森 (Elliot Anderson)', detail:'队史最贵签约，中场新核'},
+];
+
+const BIRTHDAYS = [
+  {date:'01-18', player:'瓜迪奥拉 (主帅)'},
+  {date:'05-28', player:'福登'},
+  {date:'06-22', player:'罗德里'},
+  {date:'06-28', player:'德布劳内（前球员）'},
+  {date:'07-21', player:'哈兰德'},
+  {date:'08-17', player:'谢尔基'},
+];
+
+const TRANSFER_WINDOWS = [
+  {name:'2026夏窗', close:'2026-09-01', note:'英超夏窗一般9月1日关闭（以官方为准）'},
+  {name:'2027冬窗', open:'2027-01-01', close:'2027-02-01', note:'英超冬窗一般1月1日开启（以官方为准）'},
+];
+
+const MONTH_STORIES = {
+  1:'📖 一月名场面：2024年1月13日，德布劳内伤愈复出替补登场，助攻双响导演纽卡客场3-2大逆转！——曼城球迷永远记得的回归之战。',
+  2:'📖 二月名场面：2023年2月15日，英超天王山阿森纳1-3曼城，德布劳内梅开二度+1助攻，亲手终结枪手不败领跑！',
+  3:'📖 三月名场面：2023年3月14日，欧冠1/8决赛次回合曼城7-0莱比锡，哈兰德单场五子登科，震惊欧洲！',
+  4:'📖 四月名场面：2023年4月26日，争冠天王山曼城4-1阿森纳，德布劳内2球1助，蓝月王朝就此奠定。',
+  5:'📖 五月名场面：2012年5月13日，93:20！阿圭罗绝杀QPR，曼城戏剧性首夺英超冠军！——足球史上最经典的瞬间之一。',
+  6:'📖 六月名场面：2023年6月10日，欧冠决赛曼城1-0国米，队史首座欧冠+三冠王加冕！蓝色王朝登顶欧洲！',
+  7:'📖 七月名场面：2022年7月1日，哈兰德正式加盟曼城——从此蓝月有了最锋利的矛！',
+  8:'📖 八月名场面：2023年8月16日，欧洲超级杯曼城点球5-4塞维利亚，首夺欧超杯，开启奖杯收割模式。',
+  9:'📖 九月名场面：2022年9月14日，欧冠小组赛曼城2-1多特，哈兰德反戈旧主破门，王者归来。',
+  10:'📖 十月名场面：2022年10月2日，曼市德比6-3血洗曼联！哈兰德帽子戏法+福登梅开二度，德比战封神之夜。',
+  11:'📖 十一月名场面：2023年11月12日，曼市德比3-0完胜曼联，哈兰德梅开二度+福登破门，客场碾压同城对手。',
+  12:'📖 十二月名场面：2023年12月22日，世俱杯决赛曼城4-0弗鲁米嫩塞，蓝月亮首夺世俱杯，五冠王伟业达成！'
+};
+
+/* ================= 日历逻辑 ================= */
+let curYear = 2026, curMonth = 7;
+const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+function dateKey(y, m, d) { return y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'); }
+function isBig6(opp) { return BIG6.some(t => opp.includes(t)); }
+
+const storeKey = 'mcfc_results_v2';
+const watchKey = 'mcfc_watched';
+function getResults() { try { return JSON.parse(localStorage.getItem(storeKey) || '{}'); } catch(e) { return {}; } }
+function getWatched() { try { return JSON.parse(localStorage.getItem(watchKey) || '{}'); } catch(e) { return {}; } }
+
+function getEventsForDay(key) {
+  return {
+    ms: MATCHES.filter(x => x.date === key),
+    tr: TRANSFERS.filter(x => x.date === key),
+    bd: BIRTHDAYS.filter(x => key.endsWith(x.date))
+  };
+}
+
+function setBackground(m) {
+  const imgEl = document.getElementById('headerImg');
+  if (imgEl) imgEl.src = 'photos/photo' + m + '.jpg';
+  document.getElementById('storyHint').textContent = '📖 点击查看' + monthNames[m-1] + '名场面';
+}
+
+function render() {
+  document.getElementById('monthTitle').textContent = monthNames[curMonth];
+  document.getElementById('yearTitle').textContent = curYear + ' · 曼城球迷专属日历';
+  document.getElementById('curLabel').textContent = curYear + '年' + monthNames[curMonth];
+  setBackground(curMonth + 1);
+
+  const firstDay = new Date(curYear, curMonth, 1);
+  const startWeekday = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(curYear, curMonth + 1, 0).getDate();
+  const today = new Date();
+  const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+  const watched = getWatched();
+
+  let html = '';
+  for (let i = 0; i < startWeekday; i++) html += '<div class="empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = dateKey(curYear, curMonth, d);
+    const ev = getEventsForDay(key);
+    let cls = '', dot = '';
+    if (key === todayKey) cls += ' today';
+    if (watched[key] && watched[key].watched) cls += ' watched';
+    if (ev.ms.length) {
+      cls += ' match';
+      if (ev.ms.some(m => isBig6(m.opp))) cls += ' big6';
+      dot = '<span class="dot">' + (ev.ms.some(m => isBig6(m.opp)) ? '★' : '⚽') + '</span>';
+    } else if (ev.tr.length) { cls += ' transfer'; dot = '<span class="dot">🔄</span>'; }
+    else if (ev.bd.length) { cls += ' bday'; dot = '<span class="dot">🎂</span>'; }
+    html += `<div class="${cls.trim()}" onclick="showDay('${key}')"><span class="date-num">${d}</span>${dot}</div>`;
+  }
+  document.getElementById('days').innerHTML = html;
+  renderCountdown();
+  renderStats();
+}
+
+function renderCountdown() {
+  const el = document.getElementById('countdown');
+  const now = new Date();
+  const todayK = dateKey(now.getFullYear(), now.getMonth(), now.getDate());
+  const upcoming = MATCHES.filter(x => x.date >= todayK).sort((a,b) => a.date.localeCompare(b.date))[0];
+  let html = '';
+  if (upcoming) {
+    const target = new Date(upcoming.date + 'T12:00:00');
+    const diffMs = target - now;
+    const days = Math.floor(diffMs / 86400000);
+    const hours = Math.floor((diffMs % 86400000) / 3600000);
+    html += `⚽ 距下一场：<span class="big">${upcoming.opp}（${upcoming.home?'🏟️主场':'✈️客场'}）</span><br>${upcoming.date} ${upcoming.time} 北京时间 · 还有 ${days}天${hours}小时${isBig6(upcoming.opp)?' · 🔥焦点战':''}`;
+  } else {
+    html += '⚽ 暂无已录入赛程（赛程更新中，本小姐每周帮你补）';
+  }
+  // 转会窗倒计时
+  const today = new Date();
+  const todayStr = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+  TRANSFER_WINDOWS.forEach(w => {
+    if (w.close && todayStr < w.close) {
+      const d = Math.ceil((new Date(w.close) - today) / 86400000);
+      html += `<br>🔄 ${w.name}关闭倒计时：还有 ${d} 天（${w.note}）`;
+    } else if (w.open && todayStr < w.open) {
+      const d = Math.ceil((new Date(w.open) - today) / 86400000);
+      html += `<br>🔄 ${w.name}开启倒计时：还有 ${d} 天（${w.note}）`;
+    } else if (w.open && w.close && todayStr >= w.open && todayStr < w.close) {
+      const d = Math.ceil((new Date(w.close) - today) / 86400000);
+      html += `<br>🔄 ${w.name}进行中，还剩 ${d} 天关闭`;
+    }
+  });
+  el.innerHTML = html;
+}
+
+function renderStats() {
+  const results = getResults();
+  let P = 0, W = 0, D = 0, L = 0, GF = 0, GA = 0;
+  MATCHES.forEach(m => {
+    const r = results[m.date];
+    if (!r || !r.outcome) return;
+    P++;
+    if (r.outcome === 'win') W++;
+    if (r.outcome === 'draw') D++;
+    if (r.outcome === 'loss') L++;
+    if (r.score && /^\d+-\d+$/.test(r.score)) {
+      const [a, b] = r.score.split('-').map(Number);
+      GF += m.home ? a : b; GA += m.home ? b : a;
+    }
+  });
+  const pts = W*3 + D;
+  document.getElementById('stP').textContent = P;
+  document.getElementById('stW').textContent = W;
+  document.getElementById('stD').textContent = D;
+  document.getElementById('stL').textContent = L;
+  document.getElementById('stGF').textContent = GF;
+  document.getElementById('stPts').textContent = pts;
+
+  // 自嗨版赛季预测：按当前得分率外推38轮英超
+  const rate = P > 0 ? pts / (P * 3) : 0;
+  const predictPts = Math.round(rate * 38 * 3);
+  let verdict = '⚽ 记录赛果后自动预测';
+  if (P > 0) {
+    if (rate >= 0.7) verdict = `预测赛季末约 <span class="gold">${predictPts}分</span> · 妥妥的争冠级别 👑`;
+    else if (rate >= 0.55) verdict = `预测赛季末约 <span class="gold">${predictPts}分</span> · 争冠/欧冠区 🏆`;
+    else if (rate >= 0.4) verdict = `预测赛季末约 <span class="gold">${predictPts}分</span> · 欧冠资格区 ⚽`;
+    else if (rate >= 0.25) verdict = `预测赛季末约 <span class="gold">${predictPts}分</span> · 欧战边缘 😅`;
+    else verdict = `预测赛季末约 <span class="gold">${predictPts}分</span> · 保级警报 🆘`;
+  }
+  document.getElementById('predictLine').innerHTML = verdict;
+
+  // 赛季主题色（0场=未开始，不再误判摆烂期）
+  let theme, themeName;
+  if (P === 0) { theme = 'pre'; themeName = '赛季未开始 ⏳'; }
+  else if (rate >= 0.55) { theme = 'champion'; themeName = '争冠期 👑'; }
+  else if (rate >= 0.4) { theme = 'top4'; themeName = '争四期 🏆'; }
+  else { theme = 'relegation'; themeName = '摆烂期 🪑'; }
+  document.body.dataset.theme = theme;
+  document.getElementById('statsTitle').textContent = '📊 曼城战绩统计 · 当前：' + themeName;
+}
+
+function changeMonth(delta) {
+  curMonth += delta;
+  if (curMonth < 0) { curMonth = 11; curYear--; }
+  if (curMonth > 11) { curMonth = 0; curYear++; }
+  render();
+}
+
+/* ================= 名场面弹窗 ================= */
+function showMonthStory() {
+  const story = MONTH_STORIES[curMonth + 1];
+  const box = document.getElementById('modalBox');
+  box.innerHTML = '<h3>🏟️ ' + monthNames[curMonth] + ' · 曼城名场面</h3><div class="row">' + (story || '暂无记录') + '</div><button class="close" onclick="closeModal()">关闭</button>';
+  document.getElementById('modal').classList.add('show');
+}
+
+/* ================= 日期详情弹窗 ================= */
+let pendingOutcome = null;
+
+function showDay(key) {
+  const ev = getEventsForDay(key);
+  const box = document.getElementById('modalBox');
+  let html = '<h3>' + key + '</h3>';
+  let hasContent = false;
+  const watched = getWatched();
+  const w = watched[key] || {};
+
+  if (ev.ms.length) {
+    hasContent = true;
+    ev.ms.forEach(m => {
+      const saved = getResults()[m.date];
+      const big6 = isBig6(m.opp) ? ' 🔥焦点战' : '';
+      html += `<div class="row">⚽ <b>${m.comp}：${m.home ? '曼城 vs ' + m.opp : m.opp + ' vs 曼城'}${big6}</b><br>🕐 ${m.time} 北京时间 · ${m.home ? '🏟️伊蒂哈德球场' : '✈️客场'}<br>📝 ${m.note}</div>`;
+      html += `<div class="row">📊 赛果：<input id="scoreInput" placeholder="比分（主队在前），如 2-1" value="${saved && saved.score ? saved.score : ''}"></div>`;
+      html += `<div class="row">结果：<div class="result-btns" id="rb">
+        <button class="win ${saved && saved.outcome === 'win' ? 'sel' : ''}" onclick="pickOutcome('win')">胜</button>
+        <button class="draw ${saved && saved.outcome === 'draw' ? 'sel' : ''}" onclick="pickOutcome('draw')">平</button>
+        <button class="loss ${saved && saved.outcome === 'loss' ? 'sel' : ''}" onclick="pickOutcome('loss')">负</button>
+      </div></div>`;
+      pendingOutcome = saved ? saved.outcome : null;
+      html += `<button class="save" onclick="saveResult('${m.date}')">💾 保存赛果</button>`;
+      // 看球打卡
+      let stars = '';
+      for (let s = 1; s <= 5; s++) stars += `<span class="star ${w.rating && s <= w.rating ? 'on' : ''}" onclick="setRating(${s})">★</span>`;
+      html += `<div class="watch-row"><button class="watch-btn ${w.watched ? 'on' : 'off'}" id="watchBtn" onclick="toggleWatch('${m.date}')">👀 ${w.watched ? '已打卡' : '我看过这场'}</button></div>`;
+      html += `<div class="row">评分：<span class="stars" id="starRow">${stars}</span></div>`;
+    });
+  }
+  if (ev.tr.length) {
+    hasContent = true;
+    ev.tr.forEach(t => { html += `<div class="row">🔄 <b>${t.player}</b><br>${t.type === 'in' ? '✅ 加盟' : '👋 离队'} · ${t.detail}</div>`; });
+  }
+  if (ev.bd.length) {
+    hasContent = true;
+    ev.bd.forEach(b => { html += `<div class="row">🎂 <b>${b.player}</b> 生日快乐！</div>`; });
+  }
+  if (!hasContent) html += '<div class="row">这一天没有曼城相关事件～</div>';
+  html += '<button class="close" onclick="closeModal()">关闭</button>';
+  box.innerHTML = html;
+  document.getElementById('modal').classList.add('show');
+}
+
+function pickOutcome(o) {
+  pendingOutcome = o;
+  const map = { win: 0, draw: 1, loss: 2 };
+  document.querySelectorAll('#rb button').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('#rb button')[map[o]].classList.add('sel');
+}
+
+function saveResult(date) {
+  const score = document.getElementById('scoreInput').value.trim();
+  const store = getResults();
+  store[date] = { score: score, outcome: pendingOutcome };
+  localStorage.setItem(storeKey, JSON.stringify(store));
+  closeModal();
+  render();
+  alert('✅ 赛果已保存！战绩统计已更新！');
+}
+
+function toggleWatch(date) {
+  const store = getWatched();
+  store[date] = store[date] || {};
+  store[date].watched = !store[date].watched;
+  localStorage.setItem(watchKey, JSON.stringify(store));
+  showDay(date); // 刷新弹窗
+  render();
+}
+
+function setRating(s) {
+  const box = document.getElementById('modalBox');
+  const dateInput = box.querySelector('input#scoreInput');
+  // 从弹窗内容里找日期——用当前正在显示的key
+  const key = box.querySelector('h3').textContent.trim();
+  const store = getWatched();
+  store[key] = store[key] || {};
+  store[key].watched = true;
+  store[key].rating = s;
+  localStorage.setItem(watchKey, JSON.stringify(store));
+  showDay(key);
+  render();
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+/* ================= .ics 导出 ================= */
+function exportICS() {
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//WhaleGirl//MCFC Calendar//CN', 'CALSCALE:GREGORIAN'];
+  MATCHES.forEach(m => {
+    const [y, mo, d] = m.date.split('-').map(Number);
+    const start = new Date(y, mo - 1, d, 21, 0, 0);
+    const end = new Date(start.getTime() + 2 * 3600 * 1000);
+    const p = (n) => String(n).padStart(2, '0');
+    const fmt = (dt) => dt.getFullYear() + p(dt.getMonth() + 1) + p(dt.getDate()) + 'T' + p(dt.getHours()) + p(dt.getMinutes()) + '00';
+    lines.push('BEGIN:VEVENT');
+    lines.push('DTSTART:' + fmt(start));
+    lines.push('DTEND:' + fmt(end));
+    lines.push('SUMMARY:' + '曼城 vs ' + m.opp + '（' + m.comp + '）');
+    lines.push('DESCRIPTION:' + m.note + '（由鲸鱼娘制作）');
+    lines.push('END:VEVENT');
+  });
+  lines.push('END:VCALENDAR');
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '曼城赛程.ics';
+  a.click();
+}
+
+render();
+</script>
+</body>
+</html>
