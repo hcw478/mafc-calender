@@ -14,7 +14,7 @@
   #app { max-width: 560px; margin: 0 auto; }
 
   header { position: relative; height: 190px; background: linear-gradient(135deg, #14507f, #0d2f55); background-size: cover; background-position: center; display: flex; align-items: flex-end; padding: 16px; border-radius: 0 0 18px 18px; box-shadow: 0 4px 20px rgba(0,0,0,.4); overflow: hidden; cursor: pointer; }
-  #headerImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; z-index: 0; border-radius: 0 0 18px 18px; }
+  #headerImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; z-index: 0; border-radius: 0 0 18px 18px; transition: opacity .45s ease; }
   header::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(6,18,35,.75) 100%); border-radius: 0 0 18px 18px; z-index: 1; }
   .header-text { position: relative; z-index: 2; width: 100%; }
   .header-text .month { font-size: 30px; font-weight: bold; text-shadow: 0 2px 10px rgba(0,0,0,.6); }
@@ -151,8 +151,45 @@
 const BIG6 = ['曼联', '利物浦', '阿森纳', '切尔西', '热刺', '纽卡斯尔'];
 
 const MATCHES = [
+  {date:'2026-08-16', comp:'英社盾决赛', opp:'阿森纳', home:false, time:'22:00', note:'社区盾决赛 🏆'},
   {date:'2026-08-23', comp:'英超第1轮', opp:'伯恩茅斯', home:true, time:'21:00', note:'2026-27赛季揭幕战 🎉'},
-  // ⬇️ 完整赛程将随官方发布持续更新
+  {date:'2026-08-29', comp:'英超第2轮', opp:'水晶宫', home:false, time:'03:00', note:''},
+  {date:'2026-09-05', comp:'英超第3轮', opp:'考文垂', home:true, time:'22:00', note:''},
+  {date:'2026-09-13', comp:'英超第4轮', opp:'曼联', home:true, time:'23:30', note:'🔥 曼市德比！'},
+  {date:'2026-09-19', comp:'英超第5轮', opp:'桑德兰', home:true, time:'22:00', note:''},
+  {date:'2026-10-10', comp:'英超第6轮', opp:'利物浦', home:false, time:'22:00', note:'🔥 强强对话！'},
+  {date:'2026-10-17', comp:'英超第7轮', opp:'伊普斯维奇', home:true, time:'22:00', note:''},
+  {date:'2026-10-24', comp:'英超第8轮', opp:'阿斯顿维拉', home:false, time:'22:00', note:''},
+  {date:'2026-10-31', comp:'英超第9轮', opp:'布莱顿', home:true, time:'23:00', note:''},
+  {date:'2026-11-07', comp:'英超第10轮', opp:'诺丁汉森林', home:false, time:'23:00', note:''},
+  {date:'2026-11-21', comp:'英超第11轮', opp:'富勒姆', home:true, time:'23:00', note:''},
+  {date:'2026-11-28', comp:'英超第12轮', opp:'阿森纳', home:false, time:'23:00', note:'🔥 争冠天王山！'},
+  {date:'2026-12-03', comp:'英超第13轮', opp:'利兹联', home:true, time:'04:00', note:''},
+  {date:'2026-12-05', comp:'英超第14轮', opp:'布伦特福德', home:false, time:'23:00', note:''},
+  {date:'2026-12-12', comp:'英超第15轮', opp:'切尔西', home:true, time:'23:00', note:'🔥 蓝桥对决！'},
+  {date:'2026-12-19', comp:'英超第16轮', opp:'赫尔城', home:true, time:'23:00', note:''},
+  {date:'2026-12-26', comp:'英超第17轮', opp:'纽卡斯尔联', home:false, time:'23:00', note:'🔥 焦点战！'},
+  {date:'2026-12-31', comp:'英超第18轮', opp:'埃弗顿', home:false, time:'04:00', note:''},
+  {date:'2027-01-02', comp:'英超第19轮', opp:'托特纳姆热刺', home:true, time:'23:00', note:'🔥 焦点战！'},
+  {date:'2027-01-07', comp:'英超第20轮', opp:'利兹联', home:false, time:'04:00', note:''},
+  {date:'2027-01-16', comp:'英超第21轮', opp:'诺丁汉森林', home:true, time:'23:00', note:''},
+  {date:'2027-01-23', comp:'英超第22轮', opp:'布莱顿', home:false, time:'23:00', note:''},
+  {date:'2027-01-30', comp:'英超第23轮', opp:'阿森纳', home:true, time:'23:00', note:'🔥 争冠天王山！'},
+  {date:'2027-02-06', comp:'英超第24轮', opp:'富勒姆', home:false, time:'23:00', note:''},
+  {date:'2027-02-11', comp:'英超第25轮', opp:'托特纳姆热刺', home:false, time:'04:00', note:'🔥 焦点战！'},
+  {date:'2027-02-20', comp:'英超第26轮', opp:'纽卡斯尔联', home:true, time:'23:00', note:'🔥 焦点战！'},
+  {date:'2027-02-27', comp:'英超第27轮', opp:'赫尔城', home:false, time:'23:00', note:''},
+  {date:'2027-03-04', comp:'英超第28轮', opp:'埃弗顿', home:true, time:'04:00', note:''},
+  {date:'2027-03-13', comp:'英超第29轮', opp:'考文垂', home:false, time:'23:00', note:''},
+  {date:'2027-03-20', comp:'英超第30轮', opp:'曼联', home:true, time:'23:00', note:'🔥 曼市德比！'},
+  {date:'2027-04-10', comp:'英超第31轮', opp:'伯恩茅斯', home:false, time:'22:00', note:''},
+  {date:'2027-04-17', comp:'英超第32轮', opp:'水晶宫', home:true, time:'22:00', note:''},
+  {date:'2027-04-24', comp:'英超第33轮', opp:'切尔西', home:false, time:'22:00', note:'🔥 蓝桥对决！'},
+  {date:'2027-05-01', comp:'英超第34轮', opp:'布伦特福德', home:true, time:'22:00', note:''},
+  {date:'2027-05-08', comp:'英超第35轮', opp:'利物浦', home:true, time:'22:00', note:'🔥 强强对话！'},
+  {date:'2027-05-15', comp:'英超第36轮', opp:'伊普斯维奇', home:false, time:'22:00', note:''},
+  {date:'2027-05-23', comp:'英超第37轮', opp:'阿斯顿维拉', home:true, time:'22:00', note:''},
+  {date:'2027-05-30', comp:'英超第38轮', opp:'桑德兰', home:false, time:'23:00', note:'赛季收官'},
 ];
 
 const TRANSFERS = [
@@ -211,10 +248,26 @@ function getEventsForDay(key) {
   };
 }
 
+// 图片预加载缓存（提前加载相邻月份，切换更快）
+const preloadCache = {};
+function preloadPhoto(m) {
+  if (preloadCache[m]) return;
+  const im = new Image();
+  im.src = 'photos/photo' + m + '.jpg';
+  preloadCache[m] = im;
+}
+
 function setBackground(m) {
   const imgEl = document.getElementById('headerImg');
-  if (imgEl) imgEl.src = 'photos/photo' + m + '.jpg';
+  if (!imgEl) return;
+  imgEl.style.opacity = 0; // 先隐藏，加载完淡入
+  imgEl.src = 'photos/photo' + m + '.jpg';
+  imgEl.onload = () => { imgEl.style.opacity = 1; };
+  imgEl.onerror = () => { imgEl.style.opacity = 1; }; // 加载失败也恢复显示（渐变底）
   document.getElementById('storyHint').textContent = '📖 点击查看' + monthNames[m-1] + '名场面';
+  // 预加载上一个月和下一个月
+  preloadPhoto(m === 1 ? 12 : m - 1);
+  preloadPhoto(m === 12 ? 1 : m + 1);
 }
 
 function render() {
